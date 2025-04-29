@@ -1,0 +1,99 @@
+<div class="container">
+  <header class="header">
+    <div class="header-left">
+    </div>
+    <div class="header-center">
+      <div class="logo">AGRICONNECT</div>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn profile-btn">
+        <span class="material-icons">person</span>
+      </button>
+      <button class="icon-btn wishlist-btn" (click)="navigateToWishlist()">
+        <span class="material-icons">favorite_border</span>
+        <span class="notification-badge">{{ getWishlistCount() }}</span>
+      </button>
+      <button class="icon-btn cart-btn">
+        <span class="material-icons">shopping_bag</span>
+      </button>
+    </div>
+  </header>
+
+  <h1>MES COMMANDES</h1>
+
+  <div class="main-content">
+    <div class="commandes-section">
+      <div *ngIf="!commandes || commandes.length === 0" class="no-items">
+        <p>Aucune commande trouvée.</p>
+      </div>
+
+      <div *ngIf="commandes && commandes.length > 0" class="commandes-list">
+        <div class="commande-card" *ngFor="let commande of commandes">
+          <div class="commande-header">
+            <h2 class="commande-id">Commande #{{ commande.id || 'N/A' }}</h2>
+          </div>
+          <div class="commande-details">
+            <p><strong>Client :</strong> {{ commande.clientNom }}</p>
+            <p><strong>Date :</strong> {{ commande.dateCreation || 'Non spécifiée' }}</p>
+            <p><strong>Total :</strong> {{ commande.total || 0 | currency:'TND':'symbol' }}</p>
+            <p><strong>Statut :</strong> {{ commande.status }}</p>
+            <!-- Add button to view facture for paid commandes -->
+            <button class="view-facture-btn" (click)="viewFacture(commande)" *ngIf="commande.status === 'PAID'">
+              Voir la facture
+            </button>
+          </div>
+          <div class="produits-list">
+            <div class="produit-item" *ngFor="let ligne of commande.lignesCommande">
+              <div class="produit-image">
+                <img [src]="ligne.produit.image || 'https://via.placeholder.com/80'" alt="{{ ligne.produit.nom }}" (click)="addToWishlist(ligne.produit)">
+                <span class="wishlist-indicator material-icons" *ngIf="isInWishlist(ligne.produit)">favorite</span>
+                <button class="wishlist-btn-small" (click)="addToWishlist(ligne.produit); $event.stopPropagation()">
+                  <span class="material-icons">{{ isInWishlist(ligne.produit) ? 'favorite' : 'favorite_border' }}</span>
+                </button>
+              </div>
+              <div class="produit-details">
+                <div class="produit-header">
+                  <h3 class="produit-name">{{ ligne.produit.nom }}</h3>
+                  <p class="produit-stock" *ngIf="ligne.produit.stock > 0">En stock - Expédié sous 24 heures</p>
+                  <p class="produit-limit" *ngIf="ligne.qte >= 2">Limite de 2 pièces par option et client.</p>
+                </div>
+                <div class="produit-footer">
+                  <div class="produit-pricing">
+                    <span class="original-price">{{ ligne.prixUnitaire | currency:'TND':'symbol' }}</span>
+                    <span class="discounted-price">{{ (ligne.prixUnitaire * 0.9) | currency:'TND':'symbol' }}</span>
+                    <span class="discount-percentage">50% de réduction</span>
+                  </div>
+                  <div class="quantity-controls">
+                    <button (click)="decreaseQuantity(commande, ligne)" class="quantity-btn">-</button>
+                    <input type="number" [ngModel]="ligne.qte" (ngModelChange)="updateQuantityOnChange(commande, ligne, $event)" min="1" class="quantity-input">
+                    <button (click)="increaseQuantity(commande, ligne)" class="quantity-btn">+</button>
+                  </div>
+                  <div class="action-buttons">
+                    <button (click)="updateQuantity(commande, ligne)" class="action-btn">Enregistrer</button>
+                    <button (click)="deleteLigneCommande(commande, ligne)" class="action-btn">Supprimer</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="!commande.lignesCommande || commande.lignesCommande.length === 0">
+              <p>Aucun produit dans cette commande.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="payment-sidebar">
+      <h3>Résumé</h3>
+      <div class="summary-item">
+        <span>Total des articles ({{ getTotalItems() }} pièces)</span>
+        <span>{{ getTotalItemsPrice() | currency:'TND':'symbol' }}</span>
+      </div>
+      <div class="summary-total">
+        <span>Total général</span>
+        <span>{{ getTotalItemsPrice() | currency:'TND':'symbol' }}</span>
+      </div>
+      <button class="continue-btn" (click)="proceedToPaymentFromSummary()">CONTINUER</button>
+    </div>
+  </div>
+</div>
